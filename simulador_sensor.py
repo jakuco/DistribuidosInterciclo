@@ -21,6 +21,12 @@ def simulate(sensor_type, region):
 # Simulamos dos regiones
 simulate("sismo", "region_norte")
 simulate("incendio", "region_sur")"""
+
+topics_list = [
+    "sensores/alerta/region_norte",
+    "sensores/alerta/region_sur",
+]
+
 import paho.mqtt.client as mqtt
 import json
 import time
@@ -48,6 +54,24 @@ def load_config():
 
     return config
 
+def on_message(client, userdata, msg):
+    payload = msg.payload.decode()
+    logger.info(f"Mensaje recibido en {msg.topic}: {payload}")
+
+    # Ejemplo básico de comando recibido
+    if payload.startswith("estado region_"):
+        region = payload.split(" ")[1]
+        response_message = {
+            "region": region,
+            "status": "operativo",
+            "timestamp": time.time()
+        }
+        # Responder al cliente (ajusta el topic si tienes múltiples clientes)
+        response_topic = "response/cliente2"
+        client.publish(response_topic, json.dumps(response_message))
+        logger.info(f"Respondido en {response_topic}: {response_message}")
+
+
 # Cargar configuración
 config = load_config()
 BROKER = config["mqtt_broker"]
@@ -57,6 +81,9 @@ TOPIC_PREFIX = config["topic_prefix"]
 # Inicializamos el cliente MQTT
 client = mqtt.Client()
 client.connect(BROKER, PORT, 60)
+
+client.on_message = on_message
+client.subscribe("ask/topic")
 
 def get_emergency_level(magnitude):
     """
@@ -115,25 +142,34 @@ def simulate(sensor_type, region, stop_event):
     logger.info(f"Simulación terminada. Total de alertas enviadas: {alert_count}")
 
 if __name__ == "__main__":
+    
+    
+    client.loop_start()  # Iniciar el bucle de red en un hilo separado
     stop_event = threading.Event()
 
     # Creamos y lanzamos hilos para simular sensores en diferentes regiones
-    thread_norte = threading.Thread(target=simulate, args=("sismo", "region_norte", stop_event))
-    thread_sur = threading.Thread(target=simulate, args=("incendio", "region_sur", stop_event))
+    #thread_norte = threading.Thread(target=simulate, args=("sismo", "region_norte", stop_event))
+    #thread_sur = threading.Thread(target=simulate, args=("sismo", "region_sur", stop_event))
 
+    #print("Mensaje recibido:", client.)
+    
     # Iniciar los hilos
-    thread_norte.start()
-    thread_sur.start()
+    #thread_norte.start()
+    #thread_sur.start()
 
     # Detener los hilos después de un tiempo determinado (30 segundos)
+    
+    
     time.sleep(30)
     stop_event.set()  # Detener los hilos de forma segura
 
     # Esperar que los hilos terminen
-    thread_norte.join()
-    thread_sur.join()
+    #thread_norte.join()
+    #thread_sur.join()
 
+    
     print("Simulación terminada.")
+    client.loop_stop()
     client.disconnect()  # Desconectar del broker MQTT
 
 
