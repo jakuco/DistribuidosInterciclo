@@ -27,6 +27,13 @@ public class Client {
 
     public void connect() throws MqttException {
         this.client.connect(this.options);
+        // se suscribe a la respuesta para si mismo
+        String topicFilter = "response/"+this.clientId;
+        client.subscribe(topicFilter, (topic1, message) -> {
+            String payload = new String(message.getPayload());
+            System.out.println("[RESPUESTA RECIBIDA] " + payload);
+        });
+
         for (String topic: this.topics) {
             client.subscribe(topic, (topic1, message) -> {
                 String payload = new String(message.getPayload());
@@ -50,16 +57,8 @@ public class Client {
     }
 
     public void ask_topics() throws MqttException {
-        String topicFilter = "response/"+this.clientId;
 
-        client.subscribe(topicFilter, (topic1, message) -> {
-            String payload = new String(message.getPayload());
-            System.out.println("[RESPUESTA RECIBIDA] " + payload);
-        });
-
-        String mensaje = "estado region_sur";
+        String mensaje = this.clientId; // se manda el id como mensaje, para poder hacer el publish según el id
         this.client.publish("ask/topic", new MqttMessage(mensaje.getBytes()));
-
-
     }
 }

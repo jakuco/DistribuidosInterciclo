@@ -57,9 +57,17 @@ def load_config():
 def on_message(client, userdata, msg):
     payload = msg.payload.decode()
     logger.info(f"Mensaje recibido en {msg.topic}: {payload}")
+    
+    response_message = topics_list
+    response_topic = f"response/{payload}"
+    client.publish(response_topic, json.dumps(response_message))
+    logger.info(f"Respondido en {response_topic}: {response_message}")
 
     # Ejemplo básico de comando recibido
-    if payload.startswith("estado region_"):
+    #print(payload)
+    
+    
+    """if payload.startswith("estado region_"):
         region = payload.split(" ")[1]
         response_message = {
             "region": region,
@@ -69,7 +77,7 @@ def on_message(client, userdata, msg):
         # Responder al cliente (ajusta el topic si tienes múltiples clientes)
         response_topic = "response/cliente2"
         client.publish(response_topic, json.dumps(response_message))
-        logger.info(f"Respondido en {response_topic}: {response_message}")
+        logger.info(f"Respondido en {response_topic}: {response_message}")"""
 
 
 # Cargar configuración
